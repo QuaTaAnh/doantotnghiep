@@ -1,4 +1,4 @@
-import { getAcreageService } from "../services/AcreageService"
+import { getAcreageService } from "../services/acreageService"
 
 export const getAcreageController = async (req, res) =>{
     try {

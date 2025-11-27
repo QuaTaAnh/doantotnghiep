@@ -26,7 +26,7 @@ const Address: React.FC<AddressFieldsProps> = ({
   const [provinceSelected, setProvinceSelected] = useState<boolean>(false);
   const [districtSelected, setDistrictSelected] = useState<boolean>(false);
   const [wardSelected, setWardSelected] = useState<boolean>(false);
-  const [apartmentNumber, setApartmentNumber] = useState<string>('');
+  const [apartmentNumber, setApartmentNumber] = useState<string>("");
 
   useEffect(() => {
     if (setAddressChanged) {
@@ -53,9 +53,18 @@ const Address: React.FC<AddressFieldsProps> = ({
 
   useEffect(() => {
     const getProvince = async () => {
-      const res = await axios.get("https://vapi.vnappmob.com/api/province/");
-      if (res.status === 200) {
-        setProvinces(res?.data.results);
+      try {
+        const res = await axios.get("https://provinces.open-api.vn/api/p/");
+        if (res.status === 200) {
+          // Convert data structure to match existing format
+          const formattedProvinces = res.data.map((item: any) => ({
+            province_id: item.code.toString(),
+            province_name: item.name,
+          }));
+          setProvinces(formattedProvinces);
+        }
+      } catch (error) {
+        console.error("Error fetching provinces:", error);
       }
     };
     getProvince();
@@ -64,11 +73,20 @@ const Address: React.FC<AddressFieldsProps> = ({
   useEffect(() => {
     setDistrict("");
     const getDistrict = async () => {
-      const res = await axios.get(
-        `https://vapi.vnappmob.com/api/province/district/${province}`
-      );
-      if (res.status === 200) {
-        setDistricts(res.data?.results);
+      try {
+        const res = await axios.get(
+          `https://provinces.open-api.vn/api/p/${province}?depth=2`
+        );
+        if (res.status === 200) {
+          // Convert data structure to match existing format
+          const formattedDistricts = res.data.districts.map((item: any) => ({
+            district_id: item.code.toString(),
+            district_name: item.name,
+          }));
+          setDistricts(formattedDistricts);
+        }
+      } catch (error) {
+        console.error("Error fetching districts:", error);
       }
     };
     province && getDistrict();
@@ -78,11 +96,20 @@ const Address: React.FC<AddressFieldsProps> = ({
   useEffect(() => {
     setWard("");
     const getWard = async () => {
-      const res = await axios.get(
-        `https://vapi.vnappmob.com/api/province/ward/${district}`
-      );
-      if (res.status === 200) {
-        setWards(res.data?.results);
+      try {
+        const res = await axios.get(
+          `https://provinces.open-api.vn/api/d/${district}?depth=2`
+        );
+        if (res.status === 200) {
+          // Convert data structure to match existing format
+          const formattedWards = res.data.wards.map((item: any) => ({
+            ward_id: item.code.toString(),
+            ward_name: item.name,
+          }));
+          setWards(formattedWards);
+        }
+      } catch (error) {
+        console.error("Error fetching wards:", error);
       }
     };
     district && getWard();
@@ -96,101 +123,103 @@ const Address: React.FC<AddressFieldsProps> = ({
     }));
   }, [address, setPayload]);
 
-
   return (
     <Grid container spacing={2}>
       <Grid item md={hidden ? 12 : 7}>
-      <Grid container spacing={2} marginBottom={2}>
-        <Grid item md={4}>
-          <label htmlFor="">{t("province")}</label>
-          <Select
-            fullWidth
-            sx={{ height: "40px", marginTop: "10px" }}
-            value={province}
-            onChange={(e) => {
-              setProvince(e.target.value);
-              setProvinceSelected(true);
-            }}
-          >
-            {provinces.map((prov: Province) => (
-              <MenuItem key={prov.province_id} value={prov.province_id}>
-                {prov.province_name}
-              </MenuItem>
-            ))}
-          </Select>
+        <Grid container spacing={2} marginBottom={2}>
+          <Grid item md={4}>
+            <label htmlFor="">{t("province")}</label>
+            <Select
+              fullWidth
+              sx={{ height: "40px", marginTop: "10px" }}
+              value={province}
+              onChange={(e) => {
+                setProvince(e.target.value);
+                setProvinceSelected(true);
+              }}
+            >
+              {provinces.map((prov: Province) => (
+                <MenuItem key={prov.province_id} value={prov.province_id}>
+                  {prov.province_name}
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
+          <Grid item md={4}>
+            <label htmlFor="">{t("district")}</label>
+            <Select
+              fullWidth
+              sx={{ height: "40px", marginTop: "10px" }}
+              value={district}
+              onChange={(e) => {
+                setDistrict(e.target.value);
+                setDistrictSelected(true);
+              }}
+              disabled={!provinceSelected}
+            >
+              {districts.map((dis: District) => (
+                <MenuItem key={dis.district_id} value={dis.district_id}>
+                  {dis.district_name}
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
+          <Grid item md={4}>
+            <label htmlFor="">{t("ward")}</label>
+            <Select
+              fullWidth
+              sx={{ height: "40px", marginTop: "10px" }}
+              value={ward}
+              onChange={(e) => {
+                setWard(e.target.value);
+                setWardSelected(true);
+              }}
+              disabled={!districtSelected}
+            >
+              {wards.map((war: Ward) => (
+                <MenuItem key={war.ward_id} value={war.ward_id}>
+                  {war.ward_name}
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
         </Grid>
-        <Grid item md={4}>
-          <label htmlFor="">{t("district")}</label>
-          <Select
-            fullWidth
-            sx={{ height: "40px", marginTop: "10px" }}
-            value={district}
-            onChange={(e) => {
-              setDistrict(e.target.value);
-              setDistrictSelected(true);
-            }}
-            disabled={!provinceSelected}
-          >
-            {districts.map((dis: District) => (
-              <MenuItem key={dis.district_id} value={dis.district_id}>
-                {dis.district_name}
-              </MenuItem>
-            ))}
-          </Select>
-        </Grid>
-        <Grid item md={4}>
-          <label htmlFor="">{t("ward")}</label>
-          <Select
-            fullWidth
-            sx={{ height: "40px", marginTop: "10px" }}
-            value={ward}
-            onChange={(e) => {
-              setWard(e.target.value);
-              setWardSelected(true);
-            }}
-            disabled={!districtSelected}
-          >
-            {wards.map((war: Ward) => (
-              <MenuItem key={war.ward_id} value={war.ward_id}>
-                {war.ward_name}
-              </MenuItem>
-            ))}
-          </Select>
-        </Grid>
+        {!hidden && (
+          <>
+            <label htmlFor="">{t("homeNumber")}</label>
+            <TextField
+              size="small"
+              fullWidth
+              margin="normal"
+              onChange={(e) => {
+                setApartmentNumber(e.target.value);
+              }}
+            />
+          </>
+        )}
+        <label htmlFor="">{t("addressExact")}</label>
+        <TextField
+          size="small"
+          fullWidth
+          margin="normal"
+          value={address}
+          InputProps={{
+            readOnly: true,
+            sx: {
+              backgroundColor: "#ccc",
+            },
+          }}
+        />
       </Grid>
-      {!hidden && (
-        <>
-          <label htmlFor="">{t("homeNumber")}</label>
-          <TextField
-            size="small"
-            fullWidth
-            margin="normal"
-            onChange={(e) => {
-              setApartmentNumber(e.target.value)
-            }}
-          />
-        </>
+      {!hidden ? (
+        <Grid item md={5}>
+          <Box sx={{ height: "300px" }}>
+            <MapCustom address={address} />
+          </Box>
+        </Grid>
+      ) : (
+        <></>
       )}
-      <label htmlFor="">{t("addressExact")}</label>
-      <TextField
-        size="small"
-        fullWidth
-        margin="normal"
-        value={address}
-        InputProps={{
-          readOnly: true,
-          sx: {
-            backgroundColor: "#ccc",
-          },
-        }}
-      />
-      </Grid>
-      {!hidden ? 
-      <Grid item md={5}>
-        <Box sx={{height: '300px'}}>
-          <MapCustom address={address}/>
-        </Box>
-      </Grid> : <></>}
     </Grid>
   );
 };
